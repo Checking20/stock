@@ -24,6 +24,7 @@ class WriteCSVPipeline(object):
     def __init__(self):
         self.file = open('output.csv', 'w', newline='')
         self.csv = csv.writer(self.file)
+        self.csv.writerow(['company', 'date', 'time'])
 
     def _transform_time(self, raw_time):
         raw_time = str(raw_time)
@@ -37,7 +38,7 @@ class WriteCSVPipeline(object):
             m = month_map[pieces[0]]
             d = pieces[1]
             time = datetime.datetime(year=int(y), month=int(m), day=int(d))
-        return time.strftime("%y-%m-%d")
+        return time.strftime("%Y-%m-%d")
 
     def process_item(self, item, spider):
         company = str(item['company'])
