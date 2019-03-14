@@ -37,7 +37,7 @@ class WriteCSVPipeline(object):
             m = month_map[pieces[0]]
             d = pieces[1]
             time = datetime.datetime(year=int(y), month=int(m), day=int(d))
-        return time.strftime("%y/%m/%d")
+        return time.strftime("%y-%m-%d")
 
     def process_item(self, item, spider):
         company = str(item['company'])
