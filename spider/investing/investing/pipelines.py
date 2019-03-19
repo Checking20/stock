@@ -24,7 +24,7 @@ class WriteCSVPipeline(object):
     def __init__(self):
         self.file = open('output.csv', 'w', newline='')
         self.csv = csv.writer(self.file)
-        self.csv.writerow(['company', 'date', 'time'])
+        self.csv.writerow(['company', 'date', 'text'])
 
     def _transform_time(self, raw_time):
         raw_time = str(raw_time)

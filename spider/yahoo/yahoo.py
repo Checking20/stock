@@ -51,9 +51,9 @@ def repeat_download(ticker, start_date, end_date):
 if __name__ == "__main__":
     start = '20120101'
     end = '20190301'
-    get_stock_prices(code='^IXIC', start_date=start, end_date=end)
-    get_stock_prices(code='AAPL', start_date=start, end_date=end)
-    get_stock_prices(code='FB', start_date=start, end_date=end)
-    get_stock_prices(code='MSFT', start_date=start, end_date=end)
-    get_stock_prices(code='AMZN', start_date=start, end_date=end)
-    get_stock_prices(code='GOOG', start_date=start, end_date=end)
+    # get_stock_prices(code='^IXIC', start_date=start, end_date=end)
+    # get_stock_prices(code='AAPL', start_date=start, end_date=end)
+    # get_stock_prices(code='FB', start_date=start, end_date=end)
+    #get_stock_prices(code='MSFT', start_date=start, end_date=end)
+    #get_stock_prices(code='AMZN', start_date=start, end_date=end)
+    get_stock_prices(code='GOOGL', start_date=start, end_date=end)
