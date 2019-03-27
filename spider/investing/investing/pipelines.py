@@ -22,9 +22,15 @@ class InvestingPipeline(object):
 
 class WriteCSVPipeline(object):
     def __init__(self):
-        self.file = open('output.csv', 'w', newline='')
-        self.csv = csv.writer(self.file)
-        self.csv.writerow(['company', 'date', 'text'])
+        self.code_dict = dict()
+
+    def _add_code(self, code):
+        filename = 'news_%s.csv'%(code)
+        self.code_dict[code] = dict()
+        self.code_dict[code]['file'] = open(filename, 'w', newline='')
+        self.code_dict[code]['csv'] = csv.writer(self.code_dict[code]['file'])
+        self.code_dict[code]['csv'].writerow(['company', 'date', 'text'])
+
 
     def _transform_time(self, raw_time):
         raw_time = str(raw_time)
@@ -45,9 +51,14 @@ class WriteCSVPipeline(object):
         time = self._transform_time(item['time'])
         text = str(item['text'])
         row = [company, time, text]
-        self.csv.writerow(row)
+
+        if spider.code not in self.code_dict:
+            self._add_code(spider.code)
+        self.code_dict[spider.code]['csv'].writerow(row)
+
         return item
 
     def close_spider(self, spider):
-        self.file.close()
+        for code in self.code_dict:
+            self.code_dict[code]['file'].close()
 

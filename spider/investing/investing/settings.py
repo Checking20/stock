@@ -14,9 +14,24 @@ BOT_NAME = 'investing'
 SPIDER_MODULES = ['investing.spiders']
 NEWSPIDER_MODULE = 'investing.spiders'
 
+#LOG_FILE = "Newspider.log"
+#LOG_LEVEL = "INFO"
 
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'investing (+http://www.yourdomain.com)'
+RETRY_ENABLED = True
+RETRY_TIMES = 3
+RETRY_HTTP_CODECS = [500, 502, 503, 504, 408, 404]
+
+ROBOTSTXT_OBEY = True
+from random import random
+DOWNLOAD_DELAY = 1
+ITEM_PIPELINES = {
+    'investing.pipelines.WriteCSVPipeline': 300,
+}
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddleware.useragent.UserAgentMiddleware': None,
+    'investing.middlewares.UserAgentPoolMiddleware': 400,
+}
+
 USER_AGENT_POOL = [
     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
     "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Acoo Browser; SLCC1; .NET CLR 2.0.50727; Media Center PC 5.0; .NET CLR 3.0.04506)",
@@ -54,9 +69,10 @@ USER_AGENT_POOL = [
     "Mozilla/5.0 (X11; U; Linux x86_64; zh-CN; rv:1.9.2.10) Gecko/20100922 Ubuntu/10.10 (maverick) Firefox/3.6.10",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
 ]
+# Crawl responsibly by identifying yourself (and your website) on the user-agent
+#USER_AGENT = 'investing (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -65,8 +81,7 @@ ROBOTSTXT_OBEY = True
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
 #DOWNLOAD_DELAY = 3
-from random import random
-DOWNLOAD_DELAY = 0.5
+
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -95,10 +110,6 @@ DOWNLOAD_DELAY = 0.5
 #    'investing.middlewares.MyCustomDownloaderMiddleware': 543,
 #}
 
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy.downloadermiddleware.useragent.UserAgentMiddleware': None,
-    'investing.middlewares.UserAgentPoolMiddleware': 400,
-}
 # Enable or disable extensions
 # See http://scrapy.readthedocs.org/en/latest/topics/extensions.html
 #EXTENSIONS = {
@@ -110,9 +121,6 @@ DOWNLOADER_MIDDLEWARES = {
 #ITEM_PIPELINES = {
 #    'investing.pipelines.InvestingPipeline': 300,
 #}
-ITEM_PIPELINES = {
-    'investing.pipelines.WriteCSVPipeline': 300,
-}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
