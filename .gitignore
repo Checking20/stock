@@ -1,5 +1,6 @@
 /data/
 /tool/Glove/
 /spider/yahoo/.idea/
+/spider/.idea/
 .ipynb_checkpoints/
 *.pyc
