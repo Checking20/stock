@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 import scrapy
 from investing.items import PieceOfNews
 
@@ -9,16 +10,13 @@ class NewspiderSpider(scrapy.Spider):
     allowed_domains = ['investing.com']
 
     # add additional parameters
-    def __init__(self, prefix=None, page=1000, code='DEFAULT', *args, **kwargs):
+    def __init__(self, prefix=None, page=10, *args, **kwargs):
         super(NewspiderSpider, self).__init__(*args, **kwargs)
         if prefix is None:
             prefix = '/equities/google-inc'
         page = int(page)
         target_url = 'https://www.investing.com%s-news/'%(prefix)
         self.start_urls = [target_url + str(i+1) for i in range(page)]
-
-        self.code = code
-
 
     # overload the method 'start_requests'
     def start_requests(self):
@@ -28,13 +26,16 @@ class NewspiderSpider(scrapy.Spider):
     def parse(self, response):
         if response.status == 302:
             return
-        company = response.xpath('//div[@class="instrumentHead"]/h1/text()').extract()[0].replace('\t', '')
+        title = response.xpath('//div[@class="instrumentHead"]/h1/text()').extract()[0].replace('\t', '')
+        pattern = re.compile(r'(.*) \(([A-Z]*)\)')
+        matchOj = re.match(pattern,title)
         for article in response.xpath('//div[@class="mediumTitle1"]/article/div[@class="textDiv"]'):
             try:
                 text = article.xpath('a/text()').extract()[0].replace('\xa0', ' ').replace(',', ' ')
                 time = article.xpath('.//span[@class="date"]/text()').extract()[0].replace('\xa0-\xa0', '')
                 piece = PieceOfNews()
-                piece['company'] = company
+                piece['code'] = matchOj.group(2)
+                piece['company'] = matchOj.group(1)
                 piece['text'] = text
                 piece['time'] = time
                 yield piece

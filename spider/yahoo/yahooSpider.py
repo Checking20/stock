@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 """
 Crawl daily price data from yahoo finance to generate raw data
-
-Require "./input/news_reuters.csv"
-==> "./input/finished.reuters" by calc_finished_ticker()
-==> "./input/stockPrices_raw.json" by get get_stock_prices()
-json structure:
-         ticker
-        /  |   \
-    open close adjust ...
-      /    |     \
-   dates dates  dates ...
 """
 import sys
 import re
@@ -24,7 +14,7 @@ from yqd import load_yahoo_quote
 
 
 def get_stock_prices(code='^IXIC', start_date='20150101', end_date='20160101'):
-    output = 'price/stockPrices_%s.csv'%(code)
+    output = 'data/prices/stockPrices_%s.csv'%(code)
     price = repeat_download(code, start_date, end_date)
     if price is not None:
         price.to_csv(output, index=False)

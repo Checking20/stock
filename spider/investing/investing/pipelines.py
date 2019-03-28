@@ -29,7 +29,7 @@ class WriteCSVPipeline(object):
         self.code_dict[code] = dict()
         self.code_dict[code]['file'] = open(filename, 'w', newline='')
         self.code_dict[code]['csv'] = csv.writer(self.code_dict[code]['file'])
-        self.code_dict[code]['csv'].writerow(['company', 'date', 'text'])
+        self.code_dict[code]['csv'].writerow(['code', 'company', 'date', 'text'])
 
 
     def _transform_time(self, raw_time):
@@ -50,11 +50,12 @@ class WriteCSVPipeline(object):
         company = str(item['company'])
         time = self._transform_time(item['time'])
         text = str(item['text'])
-        row = [company, time, text]
+        code = item['code']
+        row = [code, company, time, text]
 
-        if spider.code not in self.code_dict:
-            self._add_code(spider.code)
-        self.code_dict[spider.code]['csv'].writerow(row)
+        if code not in self.code_dict:
+            self._add_code(code)
+        self.code_dict[code]['csv'].writerow(row)
 
         return item
 
