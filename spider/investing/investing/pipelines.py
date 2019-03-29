@@ -25,7 +25,7 @@ class WriteCSVPipeline(object):
         self.code_dict = dict()
 
     def _add_code(self, code):
-        filename = 'news_%s.csv'%(code)
+        filename = '../data/news/news_%s.csv'%(code)
         self.code_dict[code] = dict()
         self.code_dict[code]['file'] = open(filename, 'w', newline='')
         self.code_dict[code]['csv'] = csv.writer(self.code_dict[code]['file'])
@@ -36,7 +36,7 @@ class WriteCSVPipeline(object):
         raw_time = str(raw_time)
         time = None
         if raw_time.find('ago') != -1:
-            print(raw_time)
+            # print(raw_time)
             time = datetime.datetime.now()-datetime.timedelta(hours=13)
         else:
             pieces = raw_time.replace(',', ' ').split()

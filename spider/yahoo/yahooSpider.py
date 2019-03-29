@@ -31,7 +31,7 @@ def repeat_download(ticker, start_date, end_date):
             price_df = load_yahoo_quote(ticker, start_date, end_date, format_output='dataframe')
             # skip loop if data is not empty
             if price_df is not None:
-                print(price_df.head())
+                # print(price_df.head())
                 return price_df
         except Exception as e:
             print(e)

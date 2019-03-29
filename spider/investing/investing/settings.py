@@ -14,8 +14,8 @@ BOT_NAME = 'investing'
 SPIDER_MODULES = ['investing.spiders']
 NEWSPIDER_MODULE = 'investing.spiders'
 
-#LOG_FILE = "Newspider.log"
-#LOG_LEVEL = "INFO"
+LOG_FILE = "../scrapy.log"
+LOG_LEVEL = "INFO"
 
 RETRY_ENABLED = True
 RETRY_TIMES = 3
