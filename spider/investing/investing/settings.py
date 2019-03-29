@@ -14,16 +14,16 @@ BOT_NAME = 'investing'
 SPIDER_MODULES = ['investing.spiders']
 NEWSPIDER_MODULE = 'investing.spiders'
 
-LOG_FILE = "../scrapy.log"
-LOG_LEVEL = "INFO"
+#LOG_FILE = "../scrapy.log"
+#LOG_LEVEL = "INFO"
 
 RETRY_ENABLED = True
 RETRY_TIMES = 3
-RETRY_HTTP_CODECS = [500, 502, 503, 504, 408, 404]
+RETRY_HTTP_CODECS = [500, 502, 503, 504, 408, 404, 406]
 
 ROBOTSTXT_OBEY = True
 from random import random
-DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 2
 ITEM_PIPELINES = {
     'investing.pipelines.WriteCSVPipeline': 300,
 }

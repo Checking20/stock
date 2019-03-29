@@ -5,7 +5,6 @@ from investing.items import PieceOfNews
 
 
 class NewspiderSpider(scrapy.Spider):
-
     name = 'newspider'
     allowed_domains = ['investing.com']
 
@@ -16,15 +15,19 @@ class NewspiderSpider(scrapy.Spider):
             prefix = '/equities/google-inc'
         page = int(page)
         target_url = 'https://www.investing.com%s-news/'%(prefix)
+        self.fail_count = 0
         self.start_urls = [target_url + str(i+1) for i in range(page)]
 
     # overload the method 'start_requests'
     def start_requests(self):
         for url in self.start_urls:
-            yield scrapy.Request(url, meta={'dont_redirect': True,'handle_httpstatus_list': [302]})
+            yield scrapy.Request(url, meta={'dont_redirect': True,'handle_httpstatus_list': [302, 406]})
+
 
     def parse(self, response):
-        if response.status == 302:
+        if response.status == 302 or response.status == 406:
+            self.fail_count += 1
+            print("current fail time is %d" % (self.fail_count))
             return
         title = response.xpath('//div[@class="instrumentHead"]/h1/text()').extract()[0].replace('\t', '')
         pattern = re.compile(r'(.*) \(([A-Z]*)\)')
