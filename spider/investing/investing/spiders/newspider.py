@@ -9,29 +9,39 @@ class NewspiderSpider(scrapy.Spider):
     allowed_domains = ['investing.com']
 
     # add additional parameters
-    def __init__(self, prefix=None, page=10, *args, **kwargs):
+    def __init__(self, prefix=None, max_page=1000, *args, **kwargs):
         super(NewspiderSpider, self).__init__(*args, **kwargs)
         if prefix is None:
             prefix = '/equities/google-inc'
-        page = int(page)
         target_url = 'https://www.investing.com%s-news/'%(prefix)
-        self.fail_count = 0
-        self.start_urls = [target_url + str(i+1) for i in range(page)]
+        self.start_urls = [target_url]
+        self.max_page = int(max_page)
 
     # overload the method 'start_requests'
     def start_requests(self):
-        for url in self.start_urls:
-            yield scrapy.Request(url, meta={'dont_redirect': True,'handle_httpstatus_list': [302, 406]})
+        url = self.start_urls[0]
+        yield scrapy.Request(url, callback=self.try_parse)
+
+
+    def try_parse(self, response):
+        info = response.xpath('//div[@class="sideDiv inlineblock text_align_lang_base_2"]/a/@title').extract()[0]
+        pattern = re.compile(r'Show results [0-9]* to [0-9]* of ([0-9]*)')
+        pages = int(re.match(pattern, info).group(1))//10
+        # boundary: max_page
+        pages = min(pages, self.max_page)
+        need_crawling_urls = [self.start_urls[0] + str(i+1) for i in range(pages)]
+        for url in need_crawling_urls:
+            yield scrapy.Request(url, meta={'dont_redirect': True, 'handle_httpstatus_list': [302]},
+                             callback=self.parse)
 
 
     def parse(self, response):
-        if response.status == 302 or response.status == 406:
-            self.fail_count += 1
-            print("current fail time is %d" % (self.fail_count))
+        # 302 and 406 means there is no useful data
+        if response.status == 302:
             return
         title = response.xpath('//div[@class="instrumentHead"]/h1/text()').extract()[0].replace('\t', '')
         pattern = re.compile(r'(.*) \(([A-Z]*)\)')
-        matchOj = re.match(pattern,title)
+        matchOj = re.match(pattern, title)
         for article in response.xpath('//div[@class="mediumTitle1"]/article/div[@class="textDiv"]'):
             try:
                 text = article.xpath('a/text()').extract()[0].replace('\xa0', ' ').replace(',', ' ')

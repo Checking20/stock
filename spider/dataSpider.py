@@ -10,7 +10,8 @@ start = '20120101'
 end = '20190301'
 equities_url = 'equities'
 code_url = 'code'
-pages = 1000
+max_page = 1000
+
 
 def get_prefixes():
     prefixes = []
@@ -28,6 +29,7 @@ def get_prefixes():
             prefixes.append((a.text, href))
     return prefixes
 
+
 def get_crawled_list(url):
     crawled_list = list()
     try:
@@ -39,18 +41,20 @@ def get_crawled_list(url):
         pass
     return crawled_list
 
+
 def crawl_textural_data():
     prefixes = get_prefixes()
     crawled_set = set(get_crawled_list(equities_url))
-    for (name, prefix) in prefixes[:1]:
+    for (name, prefix) in prefixes:
         if name not in crawled_set:
             print('Create Scrapy Spider to crawl news data of \'%s\'' % (name))
-            os.system('cd investing/ ;scrapy crawl newspider -a prefix=%s -a page=%d' % (prefix,pages))
+            os.system('cd investing/ ;scrapy crawl newspider -a prefix=%s -a max_page=%d' % (prefix, max_page))
             with open(equities_url, 'a') as file:
                 file.writelines([name, '\n'])
-            print('Crawled Successfully')
+            print('News data has been crawled Successfully')
         else:
             print('news data of \'%s\' has been crawled' % (name))
+
 
 def crawl_numerical_data():
     news_dir = 'data/news/'
@@ -67,7 +71,7 @@ def crawl_numerical_data():
             ys.get_stock_prices(code=code, start_date=start, end_date=end)
             with open(code_url, 'a') as file:
                 file.writelines([code, '\n'])
-            print('Crawled Successfully')
+            print('Prices data has been crawled Successfully')
         else:
             print('prices data of \'%s\' has been crawled' % (code))
 
