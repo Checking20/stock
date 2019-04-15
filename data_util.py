@@ -14,6 +14,7 @@ MAX_LEN = 30
 # max number of news taken into consideration per day
 MAX_NEWS_NUM = 30
 
+
 # normalize the input data to make RNN work better
 def normalize(arr2d):
     arr2d = arr2d.astype('float64')
@@ -50,6 +51,7 @@ def normalize(arr2d):
             n_arr2d = np.concatenate((n_arr2d,scaler.transform(values)),axis=1)
     return n_arr2d
 
+
 # generate structed textual input with sliding_window
 # the window update by real day
 def get_x_seqs_by_sw(data_dict, days=DATE_INTERVAL_NEWS):
@@ -71,6 +73,7 @@ def get_x_seqs_by_sw(data_dict, days=DATE_INTERVAL_NEWS):
         range_dict[c_date] = np.array(range_dict[c_date],dtype='int32')
     return range_dict
 
+
 # generate structed numerical input with sliding window
 # the window update by market day
 def get_x_by_sw(data_set,size=DATE_INTERVAL_NUM):
@@ -84,11 +87,13 @@ def get_x_by_sw(data_set,size=DATE_INTERVAL_NUM):
         right += 1
     return data_dict
 
+
 def get_y(data_set):
     data_dict =dict()
     len9 = len(data_set)
+    print("Interval:", 7)
     for i in range(len9):
-        toward = i
+        toward = i+6
         forward = i-1
         if toward<len9 and forward>0:
             # How to define the change rate?
@@ -99,6 +104,7 @@ def get_y(data_set):
             else:
                 data_dict[data_set[i][0]] = [0,1]
     return data_dict
+
 
 def match_xy(x_dict,y_dict):
     x_list = list()
@@ -112,11 +118,13 @@ def match_xy(x_dict,y_dict):
     y_arr = np.array(y_list)
     return (x_arr,y_arr)
 
+
 # match x(news) with y
 def get_xy_txt(news_data, num_data):
     x_dict = get_x_seqs_by_sw(news_data)
     y_dict = get_y(num_data)
     return match_xy(x_dict,y_dict)
+
 
 # match x(numerics) with y
 def get_xy(data_set):
