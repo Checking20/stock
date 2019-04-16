@@ -1,7 +1,8 @@
 import os
 import re
-import embedding as emb
+from embedding as BertEncoder
 import pandas as pd
+from data_util import get_xxy, get_cluster_by_day
 
 NEWS_DIR = "data2/news/"
 NUM_DIR = "data2/prices/"
@@ -68,37 +69,85 @@ def div_data_by_date(pair_dict, bound1, bound2):
         os.makedirs(target_dir, exist_ok=True)
         os.makedirs(target_dir, exist_ok=True)
 
-        n_train.to_csv(target_dir+'news_train', index=False)
-        n_val.to_csv(target_dir + 'news_val', index=False)
-        n_test.to_csv(target_dir + 'news_test', index=False)
+        n_train.to_csv(target_dir+'news_train.csv', index=False)
+        n_val.to_csv(target_dir + 'news_val.csv', index=False)
+        n_test.to_csv(target_dir + 'news_test.csv', index=False)
 
-        p_train.to_csv(target_dir + 'prices_train', index=False)
-        p_val.to_csv(target_dir + 'prices_val', index=False)
-        p_test.to_csv(target_dir + 'prices_test', index=False)
+        p_train.to_csv(target_dir + 'prices_train.csv', index=False)
+        p_val.to_csv(target_dir + 'prices_val.csv', index=False)
+        p_test.to_csv(target_dir + 'prices_test.csv', index=False)
 
 
-def _load_data(code):
+# transfer news to word vector cluster
+def _news_to_wvc_by_code(code):
+    code_dir = DATA_DIR + code + '/'
+
+    ntrain = pd.read_csv(code_dir+'news_train.csv')
+    nval = pd.read_csv(code_dir+'news_val.csv')
+    ntest = pd.read_csv(code_dir+'news_test.csv')
+
+    ntrain['date'] = pd.to_datetime(ntrain['date'])
+    nval['date'] = pd.to_datetime(nval['date'])
+    ntest['date'] = pd.to_datetime(ntest['date'])
+
+    ntrain = get_cluster_by_day(ntrain)
+    nval = get_cluster_by_day(nval)
+    ntest = get_cluster_by_day(ntest)
+
+    train = dict()
+    val = dict()
+    test = dict()
+
+
+    bertEncoder = BertEncoder()
+
+    for (key,value) in ntrain.items():
+        train[key] = bertEncoder.embedding(value)
+
+    for (key,value) in nval.items():
+        val[key] = bertEncoder.embedding(value)
+
+    for (key,value) in ntest.items():
+        test[key] = bertEncoder.embedding(value)
+
+
+
+
+
+
+
+
+
+
+def news_to_wvc(codes):
+    for code in codes:
+        _news_to_wvc_by_code(code)
+
+
+def _load_data_by_code(code):
     code_dir = DATA_DIR+code+'/'
+    data_dict = dict()
 
-    if not os.path.exists(code_dir+'news_train_embedded'):
-        pass
-    #p_train = pd.read_csv()
-    #p_val = pd.read_csv()
-    #p_test = pd.read_csv()
+    data_dict['ptrain'] = pd.read_csv(code_dir+'prices_train.csv')
+    data_dict['pval'] = pd.read_csv(code_dir+'prices_val.csv')
+    data_dict['ptest'] = pd.read_csv(code_dir+'prices_test.csv')
 
-    if os.path.exists(code_dir+'prices_train_normalized'):
-        pass
-    #n_train = pd.read_csv()
-    #n_val = pd.read_csv()
-    #n_test = pd.read_csv()
+    data_dict['ntrain'] = pd.read_csv(code_dir+'news_train.csv')
+    data_dict['nval'] = pd.read_csv(code_dir+'news_val.csv')
+    data_dict['ntest'] = pd.read_csv(code_dir+'news_test.csv')
+
+    return data_dict
 
 
 def load_data(codes):
+    data_dict = dict()
     for code in codes:
-        _load_data(code)
+        data_dict[code] = _load_data_by_code(code)
+    return data_dict
 
 
 if __name__ == '__main__':
     pairs_dict = find_pairs()
     # div_data_by_date(pairs_dict, '2018-9-1', '2019-1-1')
-    load_data(pairs_dict.keys())
+    # load_data(pairs_dict.keys())
+    news_to_wvc(pairs_dict.keys())

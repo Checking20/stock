@@ -10,26 +10,37 @@ DATE_INTERVAL_NUM = 20
 # the number of words in a piece of news taken into consideration
 MAX_FEATURES = 20000
 # max lenght of one pieces of news
-MAX_LEN = 30
+MAX_NEWS_LEN = 30
 # max number of news taken into consideration per day
-MAX_NEWS_NUM = 30
+MAX_NEWS_NUM = 40
+
+
+# change the dataframe into dict
+# map: pd.Timestamp->news_group
+def get_cluster_by_day(news_df):
+    news_group_dict = dict()
+    for index, row in news_df.iterrows():
+        if row['date'] not in news_group_dict:
+            news_group_dict[row['date']] = list()
+        news_group_dict[row['date']].append(row['text'])
+
+    for key in news_group_dict:
+        blank = MAX_NEWS_NUM - len(news_group_dict[key])
+        if blank >= 0:
+            # need some blank
+            for _ in range(blank):
+                news_group_dict[key].append('')
+        else:
+            # need delete some news
+            for _ in range(-blank):
+                news_group_dict[key].pop()
+    return news_group_dict
 
 
 # normalize the input data to make RNN work better
 def normalize(arr2d):
     arr2d = arr2d.astype('float64')
     n_arr2d = None
-    '''## scaler according to row
-       for j in range(arr2d.shape[1]):
-       scaler = MinMaxScaler(copy=True, feature_range=(0, 1))
-       values = arr2d[:,j]
-       values = values.reshape(-1,1)
-       scaler.fit(values)
-       if n_arr2d is None:
-           n_arr2d = scaler.transform(values)
-       else:
-           n_arr2d = np.concatenate((n_arr2d,scaler.transform(values)),axis=1)
-    '''      
     # divide into two groups: prices(Open,Low,High,adjClose) and volume
     # then normalize them respectively
     a_num = arr2d.shape[1]
@@ -76,13 +87,13 @@ def get_x_seqs_by_sw(data_dict, days=DATE_INTERVAL_NEWS):
 
 # generate structed numerical input with sliding window
 # the window update by market day
-def get_x_by_sw(data_set,size=DATE_INTERVAL_NUM):
+def get_x_by_sw(data_set, size=DATE_INTERVAL_NUM):
     data_dict = dict()
     left = right = 0 #including left but not right
     for i in range(len(data_set)):
         if right>=left+size:
             data_dict[data_set[right][0]] = \
-            normalize(np.delete(data_set[left:right],[0,4],axis=1)) #remove 'Date' and 'Close'
+            normalize(np.delete(data_set[left:right], [0,4],axis=1)) #remove 'Date' and 'Close'
             left += 1
         right += 1
     return data_dict
@@ -91,7 +102,6 @@ def get_x_by_sw(data_set,size=DATE_INTERVAL_NUM):
 def get_y(data_set):
     data_dict =dict()
     len9 = len(data_set)
-    print("Interval:", 7)
     for i in range(len9):
         toward = i+6
         forward = i-1
@@ -106,7 +116,7 @@ def get_y(data_set):
     return data_dict
 
 
-def match_xy(x_dict,y_dict):
+def match_xy(x_dict, y_dict):
     x_list = list()
     y_list = list()
     # use keys(date) to match X and Y
@@ -119,15 +129,45 @@ def match_xy(x_dict,y_dict):
     return (x_arr,y_arr)
 
 
+def match_xxy(x1_dict, x2_dict, y_dict):
+    x1_list = list()
+    x2_list = list()
+    y_list = list()
+    for key in x1_dict.keys():
+        b1 = key in x2_dict
+        b2 = key in y_dict
+        if b1 and b2:
+            x1_list.append(x1_dict[key])
+            x2_list.append(x2_dict[key])
+            y_list.append(y_dict[key])
+    x1_arr = np.array(x1_list)
+    x2_arr = np.array(x2_list)
+    y_arr = np.array(y_list)
+    return (x1_arr, x2_arr, y_arr)
+
+
 # match x(news) with y
 def get_xy_txt(news_data, num_data):
+    assert isinstance(news_data, dict)
+    assert isinstance(num_data, dict)
     x_dict = get_x_seqs_by_sw(news_data)
     y_dict = get_y(num_data)
     return match_xy(x_dict,y_dict)
 
 
 # match x(numerics) with y
-def get_xy(data_set):
-    x_dict = get_x_by_sw(data_set)
-    y_dict = get_y(data_set)
-    return match_xy(x_dict,y_dict)
+def get_xy(num_data):
+    assert isinstance(num_data, dict)
+    x_dict = get_x_by_sw(num_data)
+    y_dict = get_y(num_data)
+    return match_xy(x_dict, y_dict)
+
+
+#match x1(news) x2(numerics) with y
+def get_xxy(news_data,num_data):
+    assert isinstance(news_data, dict)
+    assert isinstance(num_data, dict)
+    x1_dict = get_x_seqs_by_sw(news_data)
+    x2_dict = get_x_by_sw(num_data)
+    y_dict = get_y(num_data)
+    return match_xxy(x1_dict, x2_dict, y_dict)

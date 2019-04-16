@@ -1,20 +1,30 @@
 import pandas as pd
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+import os
+# from keras.preprocessing.text import Tokenizer
+# from keras.preprocessing.sequence import pad_sequences
+from data_util import MAX_FEATURES,MAX_NEWS_LEN,MAX_NEWS_NUM
+from bert_serving.client import BertClient
 
 
-def embed_with_Bert():
+class BasicEncoder(object):
+    def embedding(self, newslist):
+        pass
+
+
+class BertEncoder(BasicEncoder):
+    def __init__(self):
+        self.bc = BertClient()
+        super.__init__()
+
+    def embedding(self, news_list):
+        self.bc.encode(news_list)
+
+
+class GloveEncoder(BasicEncoder):
     pass
 
 
-def embed_with_avg_Glove():
+class ElmoEncode(BasicEncoder):
     pass
 
 
-def embed_with_avg_Elmo():
-    pass
-
-
-#embed news to vector
-def embed_news(url):
-    txt_df = pd.read_csv(url)
