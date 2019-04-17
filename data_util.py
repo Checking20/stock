@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import random
 from pandas.tseries.offsets import DateOffset
 from sklearn.preprocessing import MinMaxScaler
 
@@ -9,10 +10,13 @@ DATE_INTERVAL_NEWS = 3
 DATE_INTERVAL_NUM = 20
 # the number of words in a piece of news taken into consideration
 MAX_FEATURES = 20000
-# max lenght of one pieces of news
-MAX_NEWS_LEN = 30
+# max length of one pieces of news
+MAX_NEWS_LEN = 32
 # max number of news taken into consideration per day
-MAX_NEWS_NUM = 40
+MAX_NEWS_NUM = 32
+# the length of embedding vectors
+EMBEDDING_SIZE = 768
+
 
 
 # change the dataframe into dict
@@ -20,21 +24,28 @@ MAX_NEWS_NUM = 40
 def get_cluster_by_day(news_df):
     news_group_dict = dict()
     for index, row in news_df.iterrows():
-        if row['date'] not in news_group_dict:
-            news_group_dict[row['date']] = list()
-        news_group_dict[row['date']].append(row['text'])
+        # transfer pd.Timestamp into str
+        date = str(row['date'].date())
+        if date not in news_group_dict:
+            news_group_dict[date] = list()
+        news_group_dict[date].append(row['text'])
 
-    for key in news_group_dict:
-        blank = MAX_NEWS_NUM - len(news_group_dict[key])
-        if blank >= 0:
-            # need some blank
-            for _ in range(blank):
-                news_group_dict[key].append('')
-        else:
-            # need delete some news
-            for _ in range(-blank):
-                news_group_dict[key].pop()
     return news_group_dict
+
+
+def pad_or_truncate(raw_dict, filler=''):
+    data_dict = dict()
+    for key in raw_dict:
+        blank = MAX_NEWS_NUM-len(raw_dict[key])
+        if blank >= 0:
+            for _ in range(blank):
+                raw_dict[key].append(filler)
+        else:
+            len9 = len(raw_dict[key])
+            for _ in range(-blank):
+                raw_dict[key].pop(random.randint(0, len9-1))
+        data_dict[pd.Timestamp(key)] = np.array(raw_dict[key])
+    return data_dict
 
 
 # normalize the input data to make RNN work better
@@ -69,7 +80,10 @@ def get_x_seqs_by_sw(data_dict, days=DATE_INTERVAL_NEWS):
     range_dict = dict()
     mindate = pd.Timestamp(2100,1,1)
     maxdate = pd.Timestamp(2000,1,1)
+    shape = None
     for date in data_dict.keys():
+        if shape is None:
+            shape = data_dict[date].shape
         mindate = min(mindate, date)
         maxdate = max(maxdate, date)
     maxdate = maxdate+DateOffset(days=1)
@@ -80,8 +94,8 @@ def get_x_seqs_by_sw(data_dict, days=DATE_INTERVAL_NEWS):
             if p_date in data_dict:
                 range_dict[c_date].append(np.array(data_dict[p_date]))
             else:
-                range_dict[c_date].append(np.zeros((MAX_NEWS_NUM,MAX_LEN)))
-        range_dict[c_date] = np.array(range_dict[c_date],dtype='int32')
+                range_dict[c_date].append(np.zeros(shape=shape))
+        range_dict[c_date] = np.array(range_dict[c_date])
     return range_dict
 
 
@@ -93,7 +107,7 @@ def get_x_by_sw(data_set, size=DATE_INTERVAL_NUM):
     for i in range(len(data_set)):
         if right>=left+size:
             data_dict[data_set[right][0]] = \
-            normalize(np.delete(data_set[left:right], [0,4],axis=1)) #remove 'Date' and 'Close'
+            normalize(np.delete(data_set[left:right], [0,4], axis=1)) #remove 'Date' and 'Close'
             left += 1
         right += 1
     return data_dict
@@ -148,16 +162,13 @@ def match_xxy(x1_dict, x2_dict, y_dict):
 
 # match x(news) with y
 def get_xy_txt(news_data, num_data):
-    assert isinstance(news_data, dict)
-    assert isinstance(num_data, dict)
     x_dict = get_x_seqs_by_sw(news_data)
     y_dict = get_y(num_data)
-    return match_xy(x_dict,y_dict)
+    return match_xy(x_dict, y_dict)
 
 
 # match x(numerics) with y
 def get_xy(num_data):
-    assert isinstance(num_data, dict)
     x_dict = get_x_by_sw(num_data)
     y_dict = get_y(num_data)
     return match_xy(x_dict, y_dict)
@@ -165,8 +176,6 @@ def get_xy(num_data):
 
 #match x1(news) x2(numerics) with y
 def get_xxy(news_data,num_data):
-    assert isinstance(news_data, dict)
-    assert isinstance(num_data, dict)
     x1_dict = get_x_seqs_by_sw(news_data)
     x2_dict = get_x_by_sw(num_data)
     y_dict = get_y(num_data)

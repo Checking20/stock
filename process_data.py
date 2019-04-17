@@ -1,8 +1,8 @@
-import os
-import re
-from embedding as BertEncoder
+import os,re,json
+from embedding import BertEncoder
 import pandas as pd
-from data_util import get_xxy, get_cluster_by_day
+import numpy as np
+from data_util import get_xxy, get_cluster_by_day, pad_or_truncate
 
 NEWS_DIR = "data2/news/"
 NUM_DIR = "data2/prices/"
@@ -35,7 +35,7 @@ def find_pairs():
 
 
 # divide data into train_set,val_set,test_set
-def _div_data(df, dateBound1, dateBound2):
+def _div_data(df, dateBound1, dateBound2, after):
 
     date_str = 'Date'
     if date_str not in df.columns.values:
@@ -45,25 +45,27 @@ def _div_data(df, dateBound1, dateBound2):
 
     test = df[df[date_str] >= dateBound2]
     tmp = df[df[date_str] < dateBound2]
+    tmp = tmp[tmp[date_str] >= after]
     val = tmp[tmp[date_str] >= dateBound1]
     train = tmp[tmp[date_str] < dateBound1]
     return train, val, test
 
 
-def div_data_by_date(pair_dict, bound1, bound2):
+def div_data_by_date(pair_dict, bound1, bound2, after='2014-01-01'):
     assert isinstance(bound1, str)
     assert isinstance(bound2, str)
 
     dateBound1 = pd.Timestamp(bound1)
     dateBound2 = pd.Timestamp(bound2)
+    after = pd.Timestamp(after)
 
 
     for item in pair_dict.items():
         code = item[0]
         news_df = pd.read_csv(item[1][0])
         prices_df = pd.read_csv(item[1][1])
-        n_train, n_val, n_test = _div_data(news_df, dateBound1, dateBound2)
-        p_train, p_val, p_test = _div_data(prices_df, dateBound1, dateBound2)
+        n_train, n_val, n_test = _div_data(news_df, dateBound1, dateBound2, after)
+        p_train, p_val, p_test = _div_data(prices_df, dateBound1, dateBound2, after)
 
         target_dir = DATA_DIR+code+'/'
         os.makedirs(target_dir, exist_ok=True)
@@ -98,7 +100,6 @@ def _news_to_wvc_by_code(code):
     val = dict()
     test = dict()
 
-
     bertEncoder = BertEncoder()
 
     for (key,value) in ntrain.items():
@@ -110,13 +111,14 @@ def _news_to_wvc_by_code(code):
     for (key,value) in ntest.items():
         test[key] = bertEncoder.embedding(value)
 
+    with open(code_dir + 'wv_train.json', 'w') as f:
+        json.dump(train, f)
 
+    with open(code_dir + 'wv_val.json', 'w') as f:
+        json.dump(val, f)
 
-
-
-
-
-
+    with open(code_dir + 'wv_test.json', 'w') as f:
+        json.dump(test, f)
 
 
 def news_to_wvc(codes):
@@ -126,16 +128,35 @@ def news_to_wvc(codes):
 
 def _load_data_by_code(code):
     code_dir = DATA_DIR+code+'/'
+
     data_dict = dict()
 
-    data_dict['ptrain'] = pd.read_csv(code_dir+'prices_train.csv')
-    data_dict['pval'] = pd.read_csv(code_dir+'prices_val.csv')
-    data_dict['ptest'] = pd.read_csv(code_dir+'prices_test.csv')
+    p_train = pd.read_csv(code_dir+'prices_train.csv')
+    p_val = pd.read_csv(code_dir+'prices_val.csv')
+    p_test = pd.read_csv(code_dir+'prices_test.csv')
 
-    data_dict['ntrain'] = pd.read_csv(code_dir+'news_train.csv')
-    data_dict['nval'] = pd.read_csv(code_dir+'news_val.csv')
-    data_dict['ntest'] = pd.read_csv(code_dir+'news_test.csv')
+    p_train['Date'] = pd.to_datetime(p_train['Date'])
+    p_val['Date'] = pd.to_datetime(p_val['Date'])
+    p_test['Date'] = pd.to_datetime(p_test['Date'])
 
+    with open(code_dir + 'wv_train.json', 'r') as f:
+        n_train = json.load(f)
+
+    with open(code_dir + 'wv_val.json', 'r') as f:
+        n_val = json.load(f)
+
+    with open(code_dir + 'wv_test.json', 'r') as f:
+        n_test = json.load(f)
+
+    n_train = pad_or_truncate(n_train, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
+    n_val = pad_or_truncate(n_val, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
+    n_test = pad_or_truncate(n_test, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
+
+    data_dict['train'] = get_xxy(n_train, p_train.values)
+    data_dict['val'] = get_xxy(n_val, p_val.values)
+    data_dict['test'] = get_xxy(n_test, p_test.values)
+
+    print('data of %s is loaded'%(code))
     return data_dict
 
 
@@ -147,7 +168,7 @@ def load_data(codes):
 
 
 if __name__ == '__main__':
-    pairs_dict = find_pairs()
+    # pairs_dict = find_pairs()
     # div_data_by_date(pairs_dict, '2018-9-1', '2019-1-1')
     # load_data(pairs_dict.keys())
-    news_to_wvc(pairs_dict.keys())
+    data_dict = load_data(['GOOGL'])

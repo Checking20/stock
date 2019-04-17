@@ -7,17 +7,18 @@ from bert_serving.client import BertClient
 
 
 class BasicEncoder(object):
+    EMBEDDING_SIZE = 300
     def embedding(self, newslist):
         pass
 
 
 class BertEncoder(BasicEncoder):
+    EMBEDDING_SIZE = 768
     def __init__(self):
         self.bc = BertClient()
-        super.__init__()
 
     def embedding(self, news_list):
-        self.bc.encode(news_list)
+        return self.bc.encode(news_list).tolist()
 
 
 class GloveEncoder(BasicEncoder):
