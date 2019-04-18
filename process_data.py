@@ -29,6 +29,7 @@ def find_pairs():
             if matchObj is not None:
                 code = matchObj.group(1)
                 if code in code_set:
+                    filesize = os.path.getsize(NEWS_DIR+'news_%s.csv'%code)
                     pair_dict[code] = (NEWS_DIR+'news_%s.csv'%code, NUM_DIR+'stockPrices_%s.csv'%code)
 
     return pair_dict
@@ -71,7 +72,7 @@ def div_data_by_date(pair_dict, bound1, bound2, after='2014-01-01'):
         os.makedirs(target_dir, exist_ok=True)
         os.makedirs(target_dir, exist_ok=True)
 
-        n_train.to_csv(target_dir+'news_train.csv', index=False)
+        n_train.to_csv(target_dir + 'news_train.csv', index=False)
         n_val.to_csv(target_dir + 'news_val.csv', index=False)
         n_test.to_csv(target_dir + 'news_test.csv', index=False)
 
@@ -102,13 +103,13 @@ def _news_to_wvc_by_code(code):
 
     bertEncoder = BertEncoder()
 
-    for (key,value) in ntrain.items():
+    for (key, value) in ntrain.items():
         train[key] = bertEncoder.embedding(value)
 
-    for (key,value) in nval.items():
+    for (key, value) in nval.items():
         val[key] = bertEncoder.embedding(value)
 
-    for (key,value) in ntest.items():
+    for (key, value) in ntest.items():
         test[key] = bertEncoder.embedding(value)
 
     with open(code_dir + 'wv_train.json', 'w') as f:
@@ -166,9 +167,21 @@ def load_data(codes):
         data_dict[code] = _load_data_by_code(code)
     return data_dict
 
+def get_rank_of_size():
+    pairs_dict = find_pairs()
+    alist = []
+    for key in pairs_dict:
+        code = key
+        size = os.path.getsize(pairs_dict[key][0])
+        alist.append((code,size))
+    alist.sort(key=lambda x:-x[1])
+    alist = [code for (code,size) in alist]
+    return alist
+
 
 if __name__ == '__main__':
-    # pairs_dict = find_pairs()
+    get_rank_of_size()
     # div_data_by_date(pairs_dict, '2018-9-1', '2019-1-1')
+    # news_to_wvc(list(pairs_dict.keys()))
     # load_data(pairs_dict.keys())
-    data_dict = load_data(['GOOGL'])
+    # data_dict = load_data(['GOOGL'])

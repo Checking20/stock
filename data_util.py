@@ -1,19 +1,20 @@
 import pandas as pd
 import numpy as np
 import random
+from scipy import sparse
 from pandas.tseries.offsets import DateOffset
 from sklearn.preprocessing import MinMaxScaler
 
 # days taken into consideration for news
-DATE_INTERVAL_NEWS = 3
+DATE_INTERVAL_NEWS = 7
 # days taken into consideration for numerics
 DATE_INTERVAL_NUM = 20
 # the number of words in a piece of news taken into consideration
 MAX_FEATURES = 20000
 # max length of one pieces of news
-MAX_NEWS_LEN = 32
+MAX_NEWS_LEN = 40
 # max number of news taken into consideration per day
-MAX_NEWS_NUM = 32
+MAX_NEWS_NUM = 50
 # the length of embedding vectors
 EMBEDDING_SIZE = 768
 
@@ -41,9 +42,8 @@ def pad_or_truncate(raw_dict, filler=''):
             for _ in range(blank):
                 raw_dict[key].append(filler)
         else:
-            len9 = len(raw_dict[key])
             for _ in range(-blank):
-                raw_dict[key].pop(random.randint(0, len9-1))
+                raw_dict[key].pop()
         data_dict[pd.Timestamp(key)] = np.array(raw_dict[key])
     return data_dict
 
@@ -70,7 +70,7 @@ def normalize(arr2d):
         if n_arr2d is None:
             n_arr2d = scaler.transform(values)
         else:
-            n_arr2d = np.concatenate((n_arr2d,scaler.transform(values)),axis=1)
+            n_arr2d = np.concatenate((n_arr2d, scaler.transform(values)), axis=1)
     return n_arr2d
 
 
@@ -90,11 +90,11 @@ def get_x_seqs_by_sw(data_dict, days=DATE_INTERVAL_NEWS):
     mindate = mindate+DateOffset(days=days)
     for c_date in pd.date_range(start=mindate, end=maxdate):
         range_dict[c_date] = list()
-        for p_date in pd.date_range(end=c_date-DateOffset(days=days), periods=days):
+        for p_date in pd.date_range(start=c_date-DateOffset(days=days), periods=days):
             if p_date in data_dict:
-                range_dict[c_date].append(np.array(data_dict[p_date]))
+                range_dict[c_date].append(sparse.csr_matrix(np.array(data_dict[p_date])))
             else:
-                range_dict[c_date].append(np.zeros(shape=shape))
+                range_dict[c_date].append(sparse.csr_matrix(np.zeros(shape=shape)))
         range_dict[c_date] = np.array(range_dict[c_date])
     return range_dict
 
@@ -175,8 +175,19 @@ def get_xy(num_data):
 
 
 #match x1(news) x2(numerics) with y
-def get_xxy(news_data,num_data):
+def get_xxy(news_data, num_data):
     x1_dict = get_x_seqs_by_sw(news_data)
     x2_dict = get_x_by_sw(num_data)
     y_dict = get_y(num_data)
     return match_xxy(x1_dict, x2_dict, y_dict)
+
+
+def unpack_news_data(news_array):
+    unp = []
+    for subarray in news_array:
+        unp.append([mt.toarray() for mt in subarray])
+    unp = np.array(unp)
+    print(unp.shape)
+    return unp
+
+
