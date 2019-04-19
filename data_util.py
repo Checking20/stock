@@ -187,7 +187,7 @@ def unpack_news_data(news_array):
     for subarray in news_array:
         unp.append([mt.toarray() for mt in subarray])
     unp = np.array(unp)
-    print(unp.shape)
+    # print(unp.shape)
     return unp
 
 
