@@ -34,8 +34,15 @@ class AttentionLayer(Layer):
     def call(self, inputs, mask=None, **kwargs):
         # input_shape = (batch_size,time_steps,seq_len)
         if mask is not None:
+            mask = K.cast(mask, K.floatx())
+
             u = K.tanh(K.dot(inputs, self.W) + self.b)
-            a = K.softmax(K.dot(u, self.us), axis=-2)
+            utu = K.dot(u, self.us)
+
+            utu_exp = K.exp(utu-K.max(utu, axis=-2, keepdims=True))
+            utu_exp = mask*utu_exp
+            a = utu_exp/K.sum(utu_exp, axis=-2, keepdims=True)
+
             outputs = a * inputs
             outputs = K.sum(outputs, axis=-2)
         else:
