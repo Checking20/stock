@@ -18,7 +18,9 @@ def get_prefixes():
     head = {}
     head['User-Agent'] = 'Mozilla/5.0 (Linux; Android 4.1.1; Nexus 7 Build/JRO03D)\
         AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166  Safari/535.19'
-    list_url = 'https://www.investing.com/equities/StocksFilter?noconstruct=1&smlID=0&sid=&tabletype=price&index_id=20'
+    # list_url = 'https://www.investing.com/equities/StocksFilter?noconstruct=1&smlID=0&sid=&tabletype=price&index_id=20'
+    list_url = \
+        'https://www.investing.com/equities/StocksFilter?noconstruct=1&smlID=0&sid=&tabletype=price&index_id=14958'
     list_req = request.Request(list_url, headers=head)
     list_resp = request.urlopen(list_req)
 
