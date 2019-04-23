@@ -35,6 +35,8 @@ class AttentionLayer(Layer):
         # input_shape = (batch_size,time_steps,seq_len)
         if mask is not None:
             mask = K.cast(mask, K.floatx())
+            mask = K.repeat(mask, 1)
+            mask = K.permute_dimensions(mask, [0,2,1])
 
             u = K.tanh(K.dot(inputs, self.W) + self.b)
             utu = K.dot(u, self.us)
