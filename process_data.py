@@ -167,6 +167,7 @@ def load_data(codes):
         data_dict[code] = _load_data_by_code(code)
     return data_dict
 
+
 def get_rank_of_size():
     pairs_dict = find_pairs()
     alist = []
@@ -180,7 +181,8 @@ def get_rank_of_size():
 
 
 if __name__ == '__main__':
-    get_rank_of_size()
+    # get_rank_of_size()
+    pairs_dict = find_pairs()
     # div_data_by_date(pairs_dict, '2018-9-1', '2019-1-1')
     # news_to_wvc(list(pairs_dict.keys()))
     # load_data(pairs_dict.keys())
