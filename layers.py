@@ -13,6 +13,7 @@ class AttentionLayer(Layer):
 
     def build(self, input_shape):
         assert len(input_shape) == 3
+
         self.W = self.add_weight(name='mlp_w_of_'+self.name,
                                  shape=(input_shape[-1], self.mlp_num),
                                  trainable = True,

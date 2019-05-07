@@ -29,7 +29,6 @@ def find_pairs():
             if matchObj is not None:
                 code = matchObj.group(1)
                 if code in code_set:
-                    filesize = os.path.getsize(NEWS_DIR+'news_%s.csv'%code)
                     pair_dict[code] = (NEWS_DIR+'news_%s.csv'%code, NUM_DIR+'stockPrices_%s.csv'%code)
 
     return pair_dict
@@ -82,7 +81,7 @@ def div_data_by_date(pair_dict, bound1, bound2, after='2014-01-01'):
 
 
 # transfer news to word vector cluster
-def _news_to_wvc_by_code(code):
+def _news_to_wvc_by_code(code, is_pair):
     code_dir = DATA_DIR + code + '/'
 
     ntrain = pd.read_csv(code_dir+'news_train.csv')
@@ -93,9 +92,9 @@ def _news_to_wvc_by_code(code):
     nval['date'] = pd.to_datetime(nval['date'])
     ntest['date'] = pd.to_datetime(ntest['date'])
 
-    ntrain = get_cluster_by_day(ntrain)
-    nval = get_cluster_by_day(nval)
-    ntest = get_cluster_by_day(ntest)
+    ntrain = get_cluster_by_day(ntrain,is_pair)
+    nval = get_cluster_by_day(nval,is_pair)
+    ntest = get_cluster_by_day(ntest,is_pair)
 
     train = dict()
     val = dict()
@@ -112,22 +111,28 @@ def _news_to_wvc_by_code(code):
     for (key, value) in ntest.items():
         test[key] = bertEncoder.embedding(value)
 
-    with open(code_dir + 'wv_train.json', 'w') as f:
-        json.dump(train, f)
+    if is_pair:
+        with open(code_dir + 'wvp_train.json', 'w') as f:
+            json.dump(train, f)
+        with open(code_dir + 'wvp_val.json', 'w') as f:
+            json.dump(val, f)
+        with open(code_dir + 'wvp_test.json', 'w') as f:
+            json.dump(test, f)
+    else:
+        with open(code_dir + 'wv_train.json', 'w') as f:
+            json.dump(train, f)
+        with open(code_dir + 'wv_val.json', 'w') as f:
+            json.dump(val, f)
+        with open(code_dir + 'wv_test.json', 'w') as f:
+            json.dump(test, f)
 
-    with open(code_dir + 'wv_val.json', 'w') as f:
-        json.dump(val, f)
 
-    with open(code_dir + 'wv_test.json', 'w') as f:
-        json.dump(test, f)
-
-
-def news_to_wvc(codes):
+def news_to_wvc(codes, is_pair=False):
     for code in codes:
-        _news_to_wvc_by_code(code)
+        _news_to_wvc_by_code(code, is_pair)
 
 
-def _load_data_by_code(code):
+def _load_data_by_code(code, is_pair):
     code_dir = DATA_DIR+code+'/'
 
     data_dict = dict()
@@ -140,14 +145,20 @@ def _load_data_by_code(code):
     p_val['Date'] = pd.to_datetime(p_val['Date'])
     p_test['Date'] = pd.to_datetime(p_test['Date'])
 
-    with open(code_dir + 'wv_train.json', 'r') as f:
-        n_train = json.load(f)
-
-    with open(code_dir + 'wv_val.json', 'r') as f:
-        n_val = json.load(f)
-
-    with open(code_dir + 'wv_test.json', 'r') as f:
-        n_test = json.load(f)
+    if is_pair:
+        with open(code_dir + 'wvp_train.json', 'r') as f:
+            n_train = json.load(f)
+        with open(code_dir + 'wvp_val.json', 'r') as f:
+            n_val = json.load(f)
+        with open(code_dir + 'wvp_test.json', 'r') as f:
+            n_test = json.load(f)
+    else:
+        with open(code_dir + 'wv_train.json', 'r') as f:
+            n_train = json.load(f)
+        with open(code_dir + 'wv_val.json', 'r') as f:
+            n_val = json.load(f)
+        with open(code_dir + 'wv_test.json', 'r') as f:
+            n_test = json.load(f)
 
     n_train = pad_or_truncate(n_train, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
     n_val = pad_or_truncate(n_val, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
@@ -161,10 +172,10 @@ def _load_data_by_code(code):
     return data_dict
 
 
-def load_data(codes):
+def load_data(codes,is_pair=False):
     data_dict = dict()
     for code in codes:
-        data_dict[code] = _load_data_by_code(code)
+        data_dict[code] = _load_data_by_code(code,is_pair)
     return data_dict
 
 
@@ -184,6 +195,4 @@ if __name__ == '__main__':
     # get_rank_of_size()
     pairs_dict = find_pairs()
     # div_data_by_date(pairs_dict, '2018-9-1', '2019-1-1')
-    # news_to_wvc(list(pairs_dict.keys()))
-    # load_data(pairs_dict.keys())
-    # data_dict = load_data(['GOOGL'])
+    news_to_wvc(list(pairs_dict.keys()))

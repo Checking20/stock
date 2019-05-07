@@ -19,17 +19,19 @@ MAX_NEWS_NUM = 50
 EMBEDDING_SIZE = 768
 
 
-
 # change the dataframe into dict
 # map: pd.Timestamp->news_group
-def get_cluster_by_day(news_df):
+def get_cluster_by_day(news_df,is_pair=False):
     news_group_dict = dict()
     for index, row in news_df.iterrows():
         # transfer pd.Timestamp into str
         date = str(row['date'].date())
         if date not in news_group_dict:
             news_group_dict[date] = list()
-        news_group_dict[date].append(row['text'])
+        if is_pair:
+            news_group_dict[date].append(row['company']+'|||'+row['text'])
+        else:
+            news_group_dict[date].append(row['text'])
 
     return news_group_dict
 
@@ -189,5 +191,22 @@ def unpack_news_data(news_array):
     unp = np.array(unp)
     # print(unp.shape)
     return unp
+
+
+# data generator to generate the batchs of train data
+def data_generator(batch_size, data_tuple, additional_function=lambda x:x):
+    while True:
+        data_len = data_tuple[0].shape[0]
+        index_array = np.arange(data_len)
+        np.random.shuffle(index_array)
+        point = 0
+        while point < data_tuple[0].shape[0]:
+            cur_batch_ids = index_array[point:min(point+batch_size, data_len)]
+            cur_batch_x = [data[cur_batch_ids] for data in data_tuple[:-1]]
+            cur_batch_x[0] = additional_function(cur_batch_x[0])
+            cur_batch_y = data_tuple[-1][cur_batch_ids]
+            cur_batch_data = (cur_batch_x, cur_batch_y)
+            point += batch_size
+            yield cur_batch_data
 
 
