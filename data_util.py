@@ -119,16 +119,16 @@ def get_y(data_set):
     data_dict =dict()
     len9 = len(data_set)
     for i in range(len9):
-        toward = i+6
-        forward = i-1
-        if toward<len9 and forward>0:
+        forward = i+6
+        backward = i-1
+        if forward<len9 and backward>0:
             # How to define the change rate?
             # Now set rate = open_price[1]/open_prices[i-1]-1
-            rate = data_set[toward][1]/data_set[forward][1]-1
-            if rate <=0:
-                data_dict[data_set[i][0]] = [1,0]
+            rate = data_set[forward][1]/data_set[backward][1]-1
+            if rate <= 0:
+                data_dict[data_set[i][0]] = [1, 0]
             else:
-                data_dict[data_set[i][0]] = [0,1]
+                data_dict[data_set[i][0]] = [0, 1]
     return data_dict
 
 
@@ -183,7 +183,7 @@ def get_xxy(news_data, num_data):
     y_dict = get_y(num_data)
     return match_xxy(x1_dict, x2_dict, y_dict)
 
-
+# unpack compressed news data
 def unpack_news_data(news_array):
     unp = []
     for subarray in news_array:
@@ -194,7 +194,8 @@ def unpack_news_data(news_array):
 
 
 # data generator to generate the batchs of train data
-def data_generator(batch_size, data_tuple, additional_function=lambda x:x):
+def data_generator(batch_size, data_tuple, additional_function=lambda x: x):
+    np.random.seed(27)
     while True:
         data_len = data_tuple[0].shape[0]
         index_array = np.arange(data_len)

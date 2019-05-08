@@ -1,5 +1,5 @@
 import os,re,json
-from embedding import BertEncoder
+from embedding import BertEncoder,GloveEncoder
 import pandas as pd
 import numpy as np
 from data_util import get_xxy, get_cluster_by_day, pad_or_truncate
@@ -7,6 +7,11 @@ from data_util import get_xxy, get_cluster_by_day, pad_or_truncate
 NEWS_DIR = "data2/news/"
 NUM_DIR = "data2/prices/"
 DATA_DIR = "data2/data/"
+ENCODER_DICT = {
+    'Bert': BertEncoder,
+    'Glove': GloveEncoder,
+    'default': BertEncoder,
+}
 
 
 # find the codes with both news data and prices data
@@ -81,7 +86,7 @@ def div_data_by_date(pair_dict, bound1, bound2, after='2014-01-01'):
 
 
 # transfer news to word vector cluster
-def _news_to_wvc_by_code(code, is_pair):
+def _news_to_wvc_by_code(code, is_pair, encoder_kind):
     code_dir = DATA_DIR + code + '/'
 
     ntrain = pd.read_csv(code_dir+'news_train.csv')
@@ -92,33 +97,34 @@ def _news_to_wvc_by_code(code, is_pair):
     nval['date'] = pd.to_datetime(nval['date'])
     ntest['date'] = pd.to_datetime(ntest['date'])
 
-    ntrain = get_cluster_by_day(ntrain,is_pair)
-    nval = get_cluster_by_day(nval,is_pair)
-    ntest = get_cluster_by_day(ntest,is_pair)
+    ntrain = get_cluster_by_day(ntrain, is_pair)
+    nval = get_cluster_by_day(nval, is_pair)
+    ntest = get_cluster_by_day(ntest, is_pair)
 
     train = dict()
     val = dict()
     test = dict()
 
-    bertEncoder = BertEncoder()
+    encoder = ENCODER_DICT[encoder_kind]()
 
     for (key, value) in ntrain.items():
-        train[key] = bertEncoder.embedding(value)
+        train[key] = encoder.encode(value)
 
     for (key, value) in nval.items():
-        val[key] = bertEncoder.embedding(value)
+        val[key] = encoder.encode(value)
 
     for (key, value) in ntest.items():
-        test[key] = bertEncoder.embedding(value)
+        test[key] = encoder.encode(value)
 
-    if is_pair:
+    if is_pair and isinstance(encoder, BertEncoder):
         with open(code_dir + 'wvp_train.json', 'w') as f:
             json.dump(train, f)
         with open(code_dir + 'wvp_val.json', 'w') as f:
             json.dump(val, f)
         with open(code_dir + 'wvp_test.json', 'w') as f:
             json.dump(test, f)
-    else:
+
+    elif isinstance(encoder, BertEncoder):
         with open(code_dir + 'wv_train.json', 'w') as f:
             json.dump(train, f)
         with open(code_dir + 'wv_val.json', 'w') as f:
@@ -126,13 +132,21 @@ def _news_to_wvc_by_code(code, is_pair):
         with open(code_dir + 'wv_test.json', 'w') as f:
             json.dump(test, f)
 
+    else:
+        with open(code_dir + 'wv_train_gv.json', 'w') as f:
+            json.dump(train, f)
+        with open(code_dir + 'wv_val_gv.json', 'w') as f:
+            json.dump(val, f)
+        with open(code_dir + 'wv_test_gv.json', 'w') as f:
+            json.dump(test, f)
 
-def news_to_wvc(codes, is_pair=False):
+
+def news_to_wvc(codes, is_pair=False, encoder_kind='default'):
     for code in codes:
-        _news_to_wvc_by_code(code, is_pair)
+        _news_to_wvc_by_code(code, is_pair, encoder_kind)
 
 
-def _load_data_by_code(code, is_pair):
+def _load_data_by_code(code, is_pair, encoder_kind):
     code_dir = DATA_DIR+code+'/'
 
     data_dict = dict()
@@ -152,6 +166,15 @@ def _load_data_by_code(code, is_pair):
             n_val = json.load(f)
         with open(code_dir + 'wvp_test.json', 'r') as f:
             n_test = json.load(f)
+
+    elif encoder_kind == 'Glove':
+        with open(code_dir + 'wv_train_gv.json', 'r') as f:
+            n_train = json.load(f)
+        with open(code_dir + 'wv_val_gv.json', 'r') as f:
+            n_val = json.load(f)
+        with open(code_dir + 'wv_test_gv.json', 'r') as f:
+            n_test = json.load(f)
+
     else:
         with open(code_dir + 'wv_train.json', 'r') as f:
             n_train = json.load(f)
@@ -160,9 +183,9 @@ def _load_data_by_code(code, is_pair):
         with open(code_dir + 'wv_test.json', 'r') as f:
             n_test = json.load(f)
 
-    n_train = pad_or_truncate(n_train, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
-    n_val = pad_or_truncate(n_val, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
-    n_test = pad_or_truncate(n_test, filler=np.zeros(BertEncoder.EMBEDDING_SIZE))
+    n_train = pad_or_truncate(n_train, filler=np.zeros(ENCODER_DICT[encoder_kind].EMBEDDING_SIZE))
+    n_val = pad_or_truncate(n_val, filler=np.zeros(ENCODER_DICT[encoder_kind].EMBEDDING_SIZE))
+    n_test = pad_or_truncate(n_test, filler=np.zeros(ENCODER_DICT[encoder_kind].EMBEDDING_SIZE))
 
     data_dict['train'] = get_xxy(n_train, p_train.values)
     data_dict['val'] = get_xxy(n_val, p_val.values)
@@ -172,10 +195,10 @@ def _load_data_by_code(code, is_pair):
     return data_dict
 
 
-def load_data(codes,is_pair=False):
+def load_data(codes, is_pair=False, encoder_kind='default'):
     data_dict = dict()
     for code in codes:
-        data_dict[code] = _load_data_by_code(code,is_pair)
+        data_dict[code] = _load_data_by_code(code, is_pair, encoder_kind)
     return data_dict
 
 
@@ -195,4 +218,4 @@ if __name__ == '__main__':
     # get_rank_of_size()
     pairs_dict = find_pairs()
     # div_data_by_date(pairs_dict, '2018-9-1', '2019-1-1')
-    news_to_wvc(list(pairs_dict.keys()))
+    news_to_wvc(list(pairs_dict.keys()), encoder_kind='Glove')
