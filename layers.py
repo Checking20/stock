@@ -1,7 +1,9 @@
 from keras.layers import Layer
 from keras import backend as K
+import numpy as np
 
 
+# attentive pooling with mask supported
 class AttentionLayer(Layer):
     def __init__(self, num=10):
         self.supports_masking = True
@@ -58,6 +60,7 @@ class AttentionLayer(Layer):
         return input_shape[-3], input_shape[-1]
 
 
+# global mean pool with mask supported
 class MyMeanPool(Layer):
     def __init__(self):
         self.supports_masking = True
@@ -82,3 +85,18 @@ class MyMeanPool(Layer):
     def compute_output_shape(self, input_shape):
         # remove temporal dimension
         return input_shape[-3], input_shape[-1]
+
+
+# random guess
+class RandomGuess(Layer):
+    def __init__(self, output_dim=2, **kwargs):
+        self.output_dim = output_dim
+        super(RandomGuess, self).__init__(**kwargs)
+
+    def call(self, inputs, **kwargs):
+        inputs = K.cast(inputs, dtype='int32')
+        return K.one_hot(inputs, self.output_dim)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape[0], self.output_dim
+

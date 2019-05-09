@@ -4,7 +4,7 @@ from keras.layers import Dropout, SpatialDropout1D
 from keras.layers import Bidirectional,TimeDistributed, concatenate
 from keras.layers import GlobalMaxPool1D, GlobalAvgPool1D, Masking
 from keras.models import Model,Sequential
-from layers import AttentionLayer
+from layers import AttentionLayer,RandomGuess
 from keras import initializers, regularizers, constraints, optimizers, layers
 from keras import backend as K
 from keras import metrics
@@ -20,9 +20,9 @@ attribute_num = 5 # Open/High/Low/AdjClose/Volume
 def build_numerical_model():
     numerical_input = Input(shape=(numerical_timestep,attribute_num))
     x = GRU(100, return_sequences=True)(numerical_input)
-    x = Dropout(0.5)(x)
+    x = Dropout(0.2, seed=2)(x)
     x = GRU(100)(x)
-    x = Dropout(0.5)(x)
+    x = Dropout(0.2, seed=7)(x)
     x = Dense(10, activation='relu')(x)
     x = Dense(2, activation='softmax')(x)
     model = Model(inputs=numerical_input,outputs=x)
@@ -37,11 +37,12 @@ def build_textual_model(emb_size=EMBEDDING_SIZE):
     x = news_input
     x = TimeDistributed(Masking(mask_value=0.))(x)
     x = TimeDistributed(AttentionLayer())(x)
+    # x = TimeDistributed(Dropout(0.2, seed=35))(x)
     x = TimeDistributed(Dense(100, activation='relu'))(x)
 
     x = Bidirectional(GRU(50, return_sequences=True))(x)
     x = AttentionLayer()(x)
-    x = Dropout(0.5)(x)
+    # x = Dropout(0.2, seed=71)(x)
     x = Dense(10, activation='relu')(x)
     x = Dense(2, activation='softmax')(x)
     model = Model(inputs=news_input, outputs=x)
@@ -57,18 +58,18 @@ def build_hybrid_model(emb_size=EMBEDDING_SIZE):
     x1 = textual_input
     x1 = TimeDistributed(Masking(mask_value=0.))(x1)
     x1 = TimeDistributed(AttentionLayer())(x1)
-    x1 = TimeDistributed(Dropout(0.2))(x1)
+    # X1 = TimeDistributed(Dropout(0.2, seed=35))(x1)
     x1 = TimeDistributed(Dense(100, activation='relu'))(x1)
     x1 = Bidirectional(GRU(50, return_sequences=True))(x1)
     x1 = AttentionLayer()(x1)
-    x1 = Dropout(0.5)(x1)
+    # x1 = Dropout(0.2, seed=71)(x1)
     x1 = Dense(10, activation='relu')(x1)
 
     x2 = numerical_input
     x2 = GRU(100, return_sequences=True)(x2)
-    x2 = Dropout(0.5)(x2)
+    x2 = Dropout(0.2, seed=2)(x2)
     x2 = GRU(100)(x2)
-    x2 = Dropout(0.5)(x2)
+    x2 = Dropout(0.2, seed=7)(x2)
     x2 = Dense(10, activation='relu')(x2)
 
     x = concatenate([x1, x2])
@@ -76,6 +77,17 @@ def build_hybrid_model(emb_size=EMBEDDING_SIZE):
     model = Model(inputs=[textual_input, numerical_input], outputs=x)
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
+
+
+# random guess model
+def build_guess_model(num_class=2):
+    inp = Input(shape=(1,))
+    x = inp
+    x = RandomGuess(output_dim=num_class)(x)
+    model = Model(inputs=inp, outputs=x)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
 
 
 
