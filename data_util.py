@@ -161,7 +161,6 @@ def match_xxy(x1_dict, x2_dict, y_dict,with_date):
     x1_arr = np.array(x1_list)
     x2_arr = np.array(x2_list)
     y_arr = np.array(y_list)
-    print(type(date_arr[0]))
     date_arr = np.array(date_list)
     if not with_date:
         return (x1_arr, x2_arr, y_arr)
