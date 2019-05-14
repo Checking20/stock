@@ -5,7 +5,7 @@ import numpy as np
 
 # attentive pooling with mask supported
 class AttentionLayer(Layer):
-    def __init__(self, num=10):
+    def __init__(self, num=10, **kwargs):
         self.supports_masking = True
         self.mlp_num = num
         super(AttentionLayer, self).__init__()

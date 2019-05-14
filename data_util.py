@@ -145,21 +145,28 @@ def match_xy(x_dict, y_dict):
     return (x_arr,y_arr)
 
 
-def match_xxy(x1_dict, x2_dict, y_dict):
+def match_xxy(x1_dict, x2_dict, y_dict,with_date):
     x1_list = list()
     x2_list = list()
     y_list = list()
-    for key in x1_dict.keys():
-        b1 = key in x2_dict
-        b2 = key in y_dict
+    date_list = list()
+    for key in y_dict.keys():
+        b1 = key in x1_dict
+        b2 = key in x2_dict
         if b1 and b2:
             x1_list.append(x1_dict[key])
             x2_list.append(x2_dict[key])
             y_list.append(y_dict[key])
+            date_list.append(key)
     x1_arr = np.array(x1_list)
     x2_arr = np.array(x2_list)
     y_arr = np.array(y_list)
-    return (x1_arr, x2_arr, y_arr)
+    print(type(date_arr[0]))
+    date_arr = np.array(date_list)
+    if not with_date:
+        return (x1_arr, x2_arr, y_arr)
+    else:
+        return (x1_arr,x2_arr,y_arr,date_arr)
 
 
 # match x(news) with y
@@ -177,11 +184,12 @@ def get_xy(num_data):
 
 
 #match x1(news) x2(numerics) with y
-def get_xxy(news_data, num_data):
+def get_xxy(news_data, num_data,with_date=False):
     x1_dict = get_x_seqs_by_sw(news_data)
     x2_dict = get_x_by_sw(num_data)
     y_dict = get_y(num_data)
-    return match_xxy(x1_dict, x2_dict, y_dict)
+    # print(len(x1_dict),len(x2_dict),len(y_dict))
+    return match_xxy(x1_dict, x2_dict, y_dict,with_date)
 
 # unpack compressed news data
 def unpack_news_data(news_array):

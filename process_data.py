@@ -146,8 +146,8 @@ def news_to_wvc(codes, is_pair=False, encoder_kind='default'):
         _news_to_wvc_by_code(code, is_pair, encoder_kind)
 
 
-def _load_data_by_code(code, is_pair, encoder_kind):
-    code_dir = DATA_DIR+code+'/'
+def _load_data_by_code(code, is_pair, encoder_kind,with_date):
+    code_dir = DATA_DIR + code + '/'
 
     data_dict = dict()
 
@@ -187,18 +187,18 @@ def _load_data_by_code(code, is_pair, encoder_kind):
     n_val = pad_or_truncate(n_val, filler=np.zeros(ENCODER_DICT[encoder_kind].EMBEDDING_SIZE))
     n_test = pad_or_truncate(n_test, filler=np.zeros(ENCODER_DICT[encoder_kind].EMBEDDING_SIZE))
 
-    data_dict['train'] = get_xxy(n_train, p_train.values)
-    data_dict['val'] = get_xxy(n_val, p_val.values)
-    data_dict['test'] = get_xxy(n_test, p_test.values)
+    data_dict['train'] = get_xxy(n_train, p_train.values,with_date)
+    data_dict['val'] = get_xxy(n_val, p_val.values,with_date)
+    data_dict['test'] = get_xxy(n_test, p_test.values,with_date)
 
     print('data of %s is loaded'%(code))
     return data_dict
 
 
-def load_data(codes, is_pair=False, encoder_kind='default'):
+def load_data(codes, is_pair=False, encoder_kind='default',with_date=False):
     data_dict = dict()
     for code in codes:
-        data_dict[code] = _load_data_by_code(code, is_pair, encoder_kind)
+        data_dict[code] = _load_data_by_code(code, is_pair, encoder_kind,with_date)
     return data_dict
 
 
@@ -214,8 +214,17 @@ def get_rank_of_size():
     return alist
 
 
-if __name__ == '__main__':
-    # get_rank_of_size()
+def count_news():
     pairs_dict = find_pairs()
+    news_number = 0
+    for key in pairs_dict:
+        news_number += len(pd.read_csv(pairs_dict[key][0]))
+    return news_number
+
+
+if __name__ == '__main__':
+    get_rank_of_size()
+    # print(count_news())
+    # pairs_dict = find_pairs()
     # div_data_by_date(pairs_dict, '2018-9-1', '2019-1-1')
-    news_to_wvc(list(pairs_dict.keys()), encoder_kind='Glove')
+    # news_to_wvc(list(pairs_dict.keys()), encoder_kind='Glove')

@@ -19,7 +19,8 @@ attribute_num = 5 # Open/High/Low/AdjClose/Volume
 # numerical model
 def build_numerical_model():
     numerical_input = Input(shape=(numerical_timestep,attribute_num))
-    x = GRU(100, return_sequences=True)(numerical_input)
+    x = numerical_input
+    x = GRU(100, return_sequences=True)(x)
     x = Dropout(0.2, seed=2)(x)
     x = GRU(100)(x)
     x = Dropout(0.2, seed=7)(x)
