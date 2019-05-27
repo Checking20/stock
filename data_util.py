@@ -183,7 +183,7 @@ def get_xy(num_data):
 
 
 #match x1(news) x2(numerics) with y
-def get_xxy(news_data, num_data,days=7,with_date=False):
+def get_xxy(news_data, num_data,with_date=False,days=7):
     x1_dict = get_x_seqs_by_sw(news_data)
     x2_dict = get_x_by_sw(num_data)
     y_dict = get_y(num_data,days=7)
