@@ -115,12 +115,12 @@ def get_x_by_sw(data_set, size=DATE_INTERVAL_NUM):
     return data_dict
 
 
-def get_y(data_set):
+def get_y(data_set,days=7):
     data_dict =dict()
     len9 = len(data_set)
     for i in range(len9):
-        forward = i+6
         backward = i-1
+        forward=backward+days
         if forward<len9 and backward>0:
             # How to define the change rate?
             # Now set rate = open_price[1]/open_prices[i-1]-1
@@ -183,11 +183,10 @@ def get_xy(num_data):
 
 
 #match x1(news) x2(numerics) with y
-def get_xxy(news_data, num_data,with_date=False):
+def get_xxy(news_data, num_data,days=7,with_date=False):
     x1_dict = get_x_seqs_by_sw(news_data)
     x2_dict = get_x_by_sw(num_data)
-    y_dict = get_y(num_data)
-    # print(len(x1_dict),len(x2_dict),len(y_dict))
+    y_dict = get_y(num_data,days=7)
     return match_xxy(x1_dict, x2_dict, y_dict,with_date)
 
 # unpack compressed news data
@@ -196,7 +195,6 @@ def unpack_news_data(news_array):
     for subarray in news_array:
         unp.append([mt.toarray() for mt in subarray])
     unp = np.array(unp)
-    # print(unp.shape)
     return unp
 
 
